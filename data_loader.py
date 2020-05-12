@@ -12,7 +12,7 @@ import globals as _g
 
 
 class DataGenerator:
-    def __init__(self, file_name, batch_size, nb_classes=40, train=True):
+    def __init__(self, file_name, batch_size, nb_classes=10, train=True):
         self.fie_name = file_name
         self.batch_size = batch_size
         self.nb_classes = nb_classes
@@ -68,15 +68,15 @@ class DataGenerator:
                     label = f['label'][j*20]
                     if _g.NUM_VIEWS>1:
                         for k in range(_g.NUM_VIEWS-1):
-                            item = np.vstack([item,f['data'][j*20+k+2]])
+                            item = np.vstack([item,f['data'][j*20+k+1]])
                             #label = np.vstack([label,f['label'][j*20+k+2]])
-                    if self.train:
-                        is_rotate = random.randint(0, 1)
-                        is_jitter = random.randint(0, 1)
-                        if is_rotate == 1:
-                            item = self.rotate_point_cloud(item)
-                        if is_jitter == 1:
-                            item = self.jitter_point_cloud(item)
+                    #if self.train:
+                    #    is_rotate = random.randint(0, 1)
+                    #    is_jitter = random.randint(0, 1)
+                    #    if is_rotate == 1:
+                    #        item = self.rotate_point_cloud(item)
+                    #    if is_jitter == 1:
+                    #        item = self.jitter_point_cloud(item)
                     X.append(item)
                     Y.append(label)
                 Y = np_utils.to_categorical(np.array(Y), self.nb_classes)

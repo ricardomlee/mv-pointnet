@@ -36,7 +36,7 @@ def _split_inputs(inputs):
     """
     slices = []
     for i in range(0, _g.NUM_VIEWS):
-        slices.append(inputs[:,i:i+1024,:])
+        slices.append(inputs[:,i*1024:(i+1)*1024,:])
     return slices
 
 def _view_pool(views):

@@ -70,7 +70,7 @@ def main():
                   metrics=['accuracy'])
     if not os.path.exists('./resultsmv/'):
         os.mkdir('./resultsmv/')
-    checkpoint = ModelCheckpoint('./resultsmv/pointnet.h5', monitor='val_acc',
+    checkpoint = ModelCheckpoint('./resultsmv/mvpointnet.h5', monitor='val_acc',
                                  save_weights_only=True, save_best_only=True,
                                  verbose=1)
     history = model.fit_generator(train.generator(),

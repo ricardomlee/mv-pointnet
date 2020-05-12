@@ -3,7 +3,7 @@
 
 NUM_CLASSES = 10
 
-NUM_VIEWS = 2
+NUM_VIEWS = 5
 
 PC_SHAPE = (1024, 3)
 
