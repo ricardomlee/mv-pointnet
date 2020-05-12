@@ -8,6 +8,7 @@ import numpy as np
 import h5py
 import random
 from keras.utils import np_utils
+import globals as _g
 
 
 class DataGenerator:
@@ -49,10 +50,10 @@ class DataGenerator:
         jittered_data += data
         return jittered_data
 
-    def generator(self,num_view):
+    def generator(self):
         f = h5py.File(self.fie_name, mode='r')
         nb_sample = f['data'].shape[0]
-        nb_sample //=5
+        nb_sample //=20
         while True:
             index = [n for n in range(nb_sample)]
             random.shuffle(index)
@@ -63,17 +64,20 @@ class DataGenerator:
                 X = []
                 Y = []
                 for j in batch_index:
-                    for k in range(num_view):
-                        item = f['data'][j*5+k]
-                        label = f['label'][j*5+k]
-                        if self.train:
-                            is_rotate = random.randint(0, 1)
-                            is_jitter = random.randint(0, 1)
-                            if is_rotate == 1:
-                                item = self.rotate_point_cloud(item)
-                            if is_jitter == 1:
-                                item = self.jitter_point_cloud(item)
-                        X.append(item)
-                        Y.append(label)
+                    item = f['data'][j*20]
+                    label = f['label'][j*20]
+                    if _g.NUM_VIEWS>1:
+                        for k in range(_g.NUM_VIEWS-1):
+                            item = np.vstack([item,f['data'][j*20+k+2]])
+                            #label = np.vstack([label,f['label'][j*20+k+2]])
+                    if self.train:
+                        is_rotate = random.randint(0, 1)
+                        is_jitter = random.randint(0, 1)
+                        if is_rotate == 1:
+                            item = self.rotate_point_cloud(item)
+                        if is_jitter == 1:
+                            item = self.jitter_point_cloud(item)
+                    X.append(item)
+                    Y.append(label)
                 Y = np_utils.to_categorical(np.array(Y), self.nb_classes)
                 yield np.array(X), Y

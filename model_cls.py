@@ -5,24 +5,15 @@ from keras.engine.topology import Layer
 from tensorflow.python.keras import backend as K
 import numpy as np
 import tensorflow as tf
+import globals as _g
 
-def view_pool(views):
-    expanded = [K.expand_dims(view, 0) for view in views]
-    concated = K.concatenate(expanded, 0)
-    reduced = K.max(concated, 0)
-    return reduced
-
-def MVPointNet(nb_classes,num_view):
-    input_points = Input(shape=(num_view*1024, 3))
-
+def _mlp1(input_shape):
+    inputs = Input(shape=input_shape, name='inputs')
     # forward net
-    g = Conv1D(64, 1, activation='relu')(input_points)
+    g = Conv1D(64, 1, activation='relu')(inputs)
     g = BatchNormalization()(g)
     g = Conv1D(64, 1, activation='relu')(g)
     g = BatchNormalization()(g)
-
-
-    #g = view_pool(g)
 
     # forward net
     g = Conv1D(64, 1, activation='relu')(g)
@@ -34,9 +25,44 @@ def MVPointNet(nb_classes,num_view):
 
     # global feature
     global_feature = MaxPooling1D(pool_size=1024)(g)
+    mlp=Model(inputs=inputs, outputs=global_feature, name='mlp1')
+    return mlp
+
+def _split_inputs(inputs):
+    """
+    split inputs to NUM_VIEW input
+    :param inputs: a Input with shape VIEWS_IMAGE_SHAPE
+    :return: a list of inputs which shape is IMAGE_SHAPE
+    """
+    slices = []
+    for i in range(0, _g.NUM_VIEWS):
+        slices.append(inputs[:,i:i+1024,:])
+    return slices
+
+def _view_pool(views):
+    expanded = [K.expand_dims(view, 0) for view in views]
+    concated = K.concatenate(expanded, 0)
+    reduced = K.max(concated, 0)
+    #reduced = MaxPooling1D(pool_size=1024)(views)
+    return reduced
+
+def MVPointNet(nb_classes):
+    inputs = Input(shape=(_g.NUM_VIEWS*1024,3),name='input')
+    views = Lambda(_split_inputs, name='split')(inputs)
+
+    mlp1_model = _mlp1(_g.PC_SHAPE)
+    if _g.NUM_VIEWS==1:
+        pool=mlp1_model(views)
+    else:
+        view_pool=[]
+        for view in views:
+            view_pool.append(mlp1_model(view))
+
+        pool=Lambda(_view_pool, name='view_pool')(view_pool)
+
 
     # point_net_cls
-    c = Dense(512, activation='relu')(global_feature)
+    c = Dense(512, activation='relu')(pool)
     c = BatchNormalization()(c)
     c = Dropout(0.5)(c)
     c = Dense(256, activation='relu')(c)
@@ -45,6 +71,6 @@ def MVPointNet(nb_classes,num_view):
     c = Dense(nb_classes, activation='softmax')(c)
     prediction = Flatten()(c)
 
-    model = Model(inputs=input_points, outputs=prediction)
+    model = Model(inputs=inputs, outputs=prediction)
 
     return model

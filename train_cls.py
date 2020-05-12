@@ -7,6 +7,7 @@ import os
 import matplotlib
 matplotlib.use('AGG')
 import matplotlib.pyplot as plt
+import globals as _g
 
 #os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
@@ -49,8 +50,8 @@ def save_history(history, result_dir):
 
 
 def main():
-    nb_classes = 10
-    num_view=1
+    nb_classes = _g.NUM_CLASSES
+
     train_file = './data/ModelNetS/mv_train.h5'
     test_file = './data/ModelNetS/mv_test.h5'
 
@@ -60,7 +61,7 @@ def main():
     train = DataGenerator(train_file, batch_size, nb_classes, train=True)
     val = DataGenerator(test_file, batch_size, nb_classes, train=False)
 
-    model = MVPointNet(nb_classes,num_view)
+    model = MVPointNet(nb_classes)
     model.summary()
     lr = 0.0001
     adam = Adam(lr=lr)
@@ -72,11 +73,11 @@ def main():
     checkpoint = ModelCheckpoint('./resultsmv/pointnet.h5', monitor='val_acc',
                                  save_weights_only=True, save_best_only=True,
                                  verbose=1)
-    history = model.fit_generator(train.generator(num_view),
-                                  steps_per_epoch=6484 // batch_size,
+    history = model.fit_generator(train.generator(),
+                                  steps_per_epoch=1600 // batch_size,
                                   epochs=epochs,
-                                  validation_data=val.generator(num_view),
-                                  validation_steps=1352 // batch_size,
+                                  validation_data=val.generator(),
+                                  validation_steps=320 // batch_size,
                                   callbacks=[checkpoint, onetenth_50_75(lr)],
                                   verbose=1)
 
